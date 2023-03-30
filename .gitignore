@@ -1,0 +1,5 @@
+node_modules/
+.env
+html_files/
+json_clues/
+__pycache__/
