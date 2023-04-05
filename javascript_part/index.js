@@ -9,6 +9,9 @@ require('dotenv').config({path: path.resolve(__dirname, './.env')})
 const cors = require('cors')
 app.use(cors())
 
+const fs = require('fs')
+
+
 const mongoose = require('mongoose')
 const url = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@cluster0.jkch2xx.mongodb.net/?retryWrites=true&w=majority`
 
@@ -98,6 +101,12 @@ app.put("/jepClues", async (request, response) => {
     }
 })
 
+app.get("/", (request, response) => {
+    const filePath = path.join(__dirname, "../info_htmls/info.html")
+    fs.readFile(filePath, 'utf8', function(err, data) {
+        response.send(data)
+    })
+})
 app.get("/random", (request, response) => {
     getRandomClue()
         .then(result => {
