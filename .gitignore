@@ -3,3 +3,6 @@ node_modules/
 html_files/
 json_clues/
 __pycache__/
+.dockerignore
+fly.toml
+Dockerfile

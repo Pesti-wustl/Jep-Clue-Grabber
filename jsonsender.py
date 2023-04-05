@@ -2,8 +2,8 @@ import asyncio
 import json
 import requests
 
-curr_game_id = 5
-with open(f'./json_clues/game_5.json', 'r') as f:
+curr_game_id = 15
+with open(f'./json_clues/game_{curr_game_id}.json', 'r') as f:
     data = json.load(f)
 
 
@@ -18,7 +18,6 @@ else:
     with open(f'./game_statuses.txt', 'a') as f:
         f.write(f"GAME {curr_game_id}: SUCCESS\n")
         f.close()
-
 
 """
 random_fun = requests.get('http://localhost:8080/random')

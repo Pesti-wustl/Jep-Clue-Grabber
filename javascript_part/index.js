@@ -4,14 +4,14 @@ app.use(express.json())
 
 //environment variables
 const path = require('path')
-require('dotenv').config({path: path.resolve(__dirname, '../.env')})
+require('dotenv').config({path: path.resolve(__dirname, './.env')})
 
 const cors = require('cors')
 app.use(cors())
 
 const mongoose = require('mongoose')
 const url = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@cluster0.jkch2xx.mongodb.net/?retryWrites=true&w=majority`
-//
+
 const addCluesToMongoDB = async (clues) => {
     try {
         //Add all clues and then promise not to end until they are all added
@@ -26,15 +26,12 @@ const addCluesToMongoDB = async (clues) => {
                 clue_answer: clue.clue_answer || 'ERROR'
             })
             
-            console.log(newClue)
             if (newClue.clue_value == 'ERROR') {
-                console.log("ERROR!!!!!!")
                 throw new Error("Invalid clue")
             }
             
             const alreadyinMongoDB = await checkIfDuplicate(newClue)
             if (alreadyinMongoDB) {
-                console.log("Duplicate clue... Skipping")
                 return null;
             }
             return newClue.save()
@@ -108,6 +105,18 @@ app.get("/random", (request, response) => {
         })
 })
 
+app.get("/randomGame/:gameId", async (request, response) => {
+    let game_id = request.params['gameId']
+    const categories = await Clue.aggregate([
+        {$match : {clue_game_id: game_id}},
+        {$group : {_id: {clue_round: '$clue_round', clue_category : '$clue_category'}, clues: {$push: '$$ROOT'}}},
+        {$match : {'_id.clue_round': {$in : ['single_jeopardy', 'double_jeopardy', 'final_jeopardy'] }}},
+        {$project: {_info: '$_id', clues: 1, _id: 0}},
+        {$sort : {'_id.clue_round': 1}}
+    ]).exec()
+    response.json(categories)
+})
+
 process.on('SIGINT', () => {
     console.log("goodbye!")
     mongoose.connection.close()
@@ -117,8 +126,8 @@ process.on('SIGINT', () => {
     })
 })
 
-const PORT = 8080
-const server = app.listen(PORT, () => {
+const PORT = process.env.port || 8080
+app.listen(PORT, () => {
     console.log(`Listening on PORT:${PORT}`)
 })
 
