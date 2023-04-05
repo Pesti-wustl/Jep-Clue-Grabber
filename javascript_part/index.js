@@ -102,7 +102,7 @@ app.put("/jepClues", async (request, response) => {
 })
 
 app.get("/", (request, response) => {
-    const filePath = path.join(__dirname, "../info_htmls/info.html")
+    const filePath = path.join(__dirname, "./info_htmls/info.html")
     fs.readFile(filePath, 'utf8', function(err, data) {
         response.send(data)
     })
