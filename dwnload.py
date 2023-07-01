@@ -3,7 +3,9 @@ import os
 from bs4 import BeautifulSoup
 import json
 import time
+import sys
 all_clues = []
+#automated_game_id_start = int(sys.argv[1])
 
 def get_final_jeopardy_clue(fj_block, final_jep_block_with_answer):
     final_jep_clue = fj_block.find('td', class_='clue_text')
@@ -60,7 +62,7 @@ def update_category_index(curr_index):
         curr_index += 1
         return curr_index
 
-for curr_game_id in range(16, 100): #For every single game, we gotta check if cached, GET if not... Etc...
+for curr_game_id in range(2, 3): #For every single game, we gotta check if cached, GET if not... Etc...
     all_clues = [] #Reset the all clues
 
     # URL of the web page you want to download
@@ -104,8 +106,7 @@ for curr_game_id in range(16, 100): #For every single game, we gotta check if ca
 
         #Get the year, only have to do once
         game_year_title = bsoup.find("title").get_text()
-        game_year = game_year_title[-10:-6]
-        
+        game_year = game_year_title[-10:-6]        
 
         categories_arr = get_category_names(bsoup)
         category_index = 0
@@ -209,4 +210,4 @@ for curr_game_id in range(16, 100): #For every single game, we gotta check if ca
     print("game finished, delaying for next one")
 
     # For a lot of games, delay by 30 seconds
-    time.sleep(30)
+    time.sleep(12)

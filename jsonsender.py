@@ -1,8 +1,12 @@
 import asyncio
+import sys
 import json
 import requests
 
-curr_game_id = 15
+automated_game_id = sys.argv[1]
+
+curr_game_id = int(automated_game_id)
+
 with open(f'./json_clues/game_{curr_game_id}.json', 'r') as f:
     data = json.load(f)
 
