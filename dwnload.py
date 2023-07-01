@@ -11,22 +11,35 @@ def get_final_jeopardy_clue(fj_block, final_jep_block_with_answer):
     final_jep_clue = fj_block.find('td', class_='clue_text')
 
     final_jep_clue_text = final_jep_block_with_answer.find("td")
-    final_jep_souper = final_jep_clue_text.find("div")
-    final_jep_within_div = final_jep_souper['onmouseover']
-    final_jep_div_souper = BeautifulSoup(final_jep_within_div, 'html.parser')
-    final_jep_em = final_jep_div_souper.find('em', {'class': 'correct_response'}).get_text()
 
-    return [final_jep_clue.get_text(), final_jep_em] #Return final clue, final answer
+    fj_correct_response_em = fj_block.find('em', {'class': 'correct_response'})
+    fj_correct_response = None
+    if fj_correct_response_em:
+        fj_correct_response = fj_correct_response_em.get_text()
+
+    # final_jep_souper = final_jep_clue_text.find("div")
+    # final_jep_within_div = final_jep_souper['onmouseover']
+    # final_jep_div_souper = BeautifulSoup(final_jep_within_div, 'html.parser')
+    # final_jep_em = final_jep_div_souper.find('em', {'class': 'correct_response'}).get_text()
+
+    return [final_jep_clue.get_text(), fj_correct_response] #Return final clue, final answer
 
 
 def get_jeopardy_question_and_answer(clue_div, clue_snippet):
-    question_onmouseover = clue_div['onmouseover'] #answer is in the onmouseover attribute
+
+
+    #question_onmouseover = clue_div['onmouseover'] #answer is in the onmouseover attribute
     
-    question_souper = BeautifulSoup(question_onmouseover, 'html.parser') #Need to search again with bsoup, parse this onmouseover attribute
-    correct_response = question_souper.find('em', {'class': 'correct_response'}) #find the "em" in here with a correct response
+    #question_souper = BeautifulSoup(question_onmouseover, 'html.parser') #Need to search again with bsoup, parse this onmouseover attribute
+    #correct_response = question_souper.find('em', {'class': 'correct_response'}) #find the "em" in here with a correct response
+    rj_correct_response_em = clue_snippet.find('em', {'class': 'correct_response'})
+    rj_correct_response = None
+    if rj_correct_response_em:
+        rj_correct_response = rj_correct_response_em.get_text()
+    
     answer_in_td = BeautifulSoup(clue_snippet.find("td", class_="clue_text").get_text()) #gets the answer (question in general trivia term) of the clue in the <td>
             
-    return [answer_in_td.get_text(), correct_response.get_text()] #return clue question, clue answer
+    return [answer_in_td.get_text(), rj_correct_response] #return clue question, clue answer
 
 def get_category_names(full_html):
     #Get the Categories
@@ -127,19 +140,25 @@ for curr_game_id in range(2, 3): #For every single game, we gotta check if cache
             #Check for Daily Double instead of in the try-except
             clue_value_DD = clue_snippet.find("td", class_="clue_value_daily_double")
             if (clue_value_DD):
-
+                
                 #This is a Daily Double
                 daily_double_question = clue_snippet.find("td", {'class': 'clue_text'})
-
-                DD_div = clue_snippet.find("div")
-                DD_onmouseover = DD_div['onmouseover']
-                DD_question_souper = BeautifulSoup(DD_onmouseover, 'html.parser')
-                DD_correct_response = DD_question_souper.find('em', {'class': 'correct_response'})
                 
+                #DD_div = clue_snippet.find("div")
+                #DD_onmouseover = DD_div['onmouseover']
+                #DD_question_souper = BeautifulSoup(DD_onmouseover, 'html.parser')
+                #DD_correct_response = DD_question_souper.find('em', {'class': 'correct_response'})
+                
+
+                DD_correct_response_em = clue_snippet.find('em', {'class': 'correct_response'})
+                DD_correct_response = None
+                if DD_correct_response_em:
+                    DD_correct_response = DD_correct_response_em.get_text()
+
                 #Also have to custom make this an object
                 current_clue_information['clue_category'] = current_categories[category_index]
                 current_clue_information['clue_question'] = daily_double_question.get_text()
-                current_clue_information['clue_answer'] = DD_correct_response.get_text()
+                current_clue_information['clue_answer'] = DD_correct_response
                 current_clue_information['clue_value'] = 'DD'
                 current_clue_information['clue_round'] = 'single_jeopardy' if not isDoubleJeopardy else 'double_jeopardy'
                 category_index = update_category_index(category_index)
