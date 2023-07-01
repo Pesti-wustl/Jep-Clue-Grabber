@@ -60,7 +60,7 @@ def update_category_index(curr_index):
         curr_index += 1
         return curr_index
 
-for curr_game_id in range(10, 16): #For every single game, we gotta check if cached, GET if not... Etc...
+for curr_game_id in range(16, 100): #For every single game, we gotta check if cached, GET if not... Etc...
     all_clues = [] #Reset the all clues
 
     # URL of the web page you want to download
@@ -207,4 +207,6 @@ for curr_game_id in range(10, 16): #For every single game, we gotta check if cac
         json.dump(all_clues, f)
     
     print("game finished, delaying for next one")
-    time.sleep(1)
+
+    # For a lot of games, delay by 30 seconds
+    time.sleep(30)
