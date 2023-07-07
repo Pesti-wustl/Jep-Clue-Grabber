@@ -5,7 +5,7 @@ import json
 import time
 import sys
 all_clues = []
-#automated_game_id_start = int(sys.argv[1])
+automated_game_id_start = int(sys.argv[1])
 
 def get_final_jeopardy_clue(fj_block, final_jep_block_with_answer):
     final_jep_clue = fj_block.find('td', class_='clue_text')
@@ -75,7 +75,7 @@ def update_category_index(curr_index):
         curr_index += 1
         return curr_index
 
-for curr_game_id in range(2, 3): #For every single game, we gotta check if cached, GET if not... Etc...
+for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1): #For every single game, we gotta check if cached, GET if not... Etc...
     all_clues = [] #Reset the all clues
 
     # URL of the web page you want to download
@@ -214,7 +214,8 @@ for curr_game_id in range(2, 3): #For every single game, we gotta check if cache
                 all_clues.append(current_clue_information)
 
                 category_index = update_category_index(category_index)
-                
+
+            # Blank clue will do this, not every game has 60 clues, still have to update the category index    
             except (TypeError, AttributeError) as e:
                 category_index = update_category_index(category_index)
                 print(e)
