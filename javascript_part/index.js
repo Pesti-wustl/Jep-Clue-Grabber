@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express()
 app.use(express.json())
+const { Pool } = require('pg')
 
 //environment variables
 const path = require('path')
@@ -11,90 +12,89 @@ app.use(cors())
 
 const fs = require('fs')
 
+const pool = new Pool({
+    connectionString: process.env.SUPABASE_CONNECTION_STRING
+})
 
-const mongoose = require('mongoose')
-const url = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@cluster0.jkch2xx.mongodb.net/?retryWrites=true&w=majority`
+const checkCategoryAndGetId = async (categoryName, gameId, gameYear) => {
+    const sql = 'SELECT id FROM categories WHERE category_name = $1 AND game_id = $2 AND game_year = $3'
+    const values = [categoryName, gameId, gameYear]
+    const result = await pool.query(sql, values)
+    return result.rows.length > 0 ? result.rows[0].id : null
+}
 
-const addCluesToMongoDB = async (clues) => {
+const insertCategoryAndGetId = async (categoryName, gameId, gameYear, categoryOrder) => {
+    const insertSql = 'INSERT INTO categories (category_name, game_id, game_year, category_order) VALUES ($1, $2, $3, $4) RETURNING id'
+    const insertValues = [categoryName, gameId, gameYear, categoryOrder]
+    const insertResult = await pool.query(insertSql, insertValues)
+    return insertResult.rows[0].id
+}
+
+
+const addCluesToPostgres = async (clues) => {
     try {
-        //Add all clues and then promise not to end until they are all added
-        const cluePromises = clues.map(async (clue) => {
-            const newClue = new Clue({
-                clue_game_id: clue.clue_game_id || 'ERROR',
-                game_year: clue.game_year || 'ERROR',
-                clue_value: clue.clue_value || 'ERROR',
-                clue_category: clue.clue_category || 'ERROR',
-                clue_round: clue.clue_round || 'ERROR',
-                clue_question: clue.clue_question || 'ERROR',
-                clue_answer: clue.clue_answer || 'ERROR'
-            })
-            
-            if (newClue.clue_value == 'ERROR') {
-                throw new Error("Invalid clue")
+        for (const clue of clues) {
+            if (clue.clue_value === 'ERROR') {
+                throw new Error("Invalid clue");
             }
-            
-            const alreadyinMongoDB = await checkIfDuplicate(newClue)
-            if (alreadyinMongoDB) {
+
+            const isDuplicate = await checkIfDuplicate(clue)
+            if (isDuplicate) {
                 return null;
             }
-            return newClue.save()
-        })
-    
-        await Promise.all(cluePromises) //Ensures the mapping finishes before closing the connection
-        
-        console.log("A batch of clues have been added")
 
+            let categoryId = await checkCategoryAndGetId(clue.clue_category, clue.clue_game_id, clue.game_year);
+            if (categoryId === null) {
+                categoryId = await insertCategoryAndGetId(clue.clue_category, clue.clue_game_id, clue.game_year, clue.category_order);
+            }
+
+            const sql = 'INSERT INTO jeopardy_clues (game_id, game_year, clue_value, clue_order, category_id, clue_round, clue_question, clue_answer, category_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)';
+            const values = [clue.clue_game_id, clue.game_year, clue.clue_value, clue.clue_order, categoryId, clue.clue_round, clue.clue_question, clue.clue_answer, clue.clue_category];
+
+            await pool.query(sql, values);
+        }
+        console.log("A batch of clues have been added");
     } catch (error) {
-        console.log("CAUGHT ERROR")
-        throw error
+        console.log("CAUGHT ERROR", error);
+        throw error;
     }
-}
+};
+
 
 const checkIfDuplicate = async (clue) => {
 
     try {
-        const result = await Clue.find({clue_game_id: clue.clue_game_id, clue_question: clue.clue_question});
-        return result.length > 0
+        const sql = 'SELECT COUNT(*) FROM jeopardy_clues WHERE game_id = $1 AND clue_question = $2 AND clue_answer = $3'
+        const values = [clue.clue_game_id, clue.clue_question, clue.clue_answer]
+
+        const result = await pool.query(sql, values)
+
+        return result.rows[0].count > 0
     } catch (err) {
-        console.log(err)
+        console.log("Error in checkIfDuplicate", err.message)
         return false
     }
 }
 
 const getRandomClue = async () => {
-    return new Promise((resolve, reject) => {
-        Clue.countDocuments().exec()
-            .then(count => {
-                const random = Math.floor(Math.random() * count)
-                return Clue.findOne().skip(random).exec()
-            })
-            .then(result => {
-                resolve(result)
-            })
-            .catch(error => {
-                reject(error)
-            })
-    })
+    try {
+        const countResult = await pool.query('SELECT COUNT(*) FROM jeopardy_clues')
+        const count = parseInt(countResult.rows[0].count)
+        const randomindex = Math.floor(Math.random() * count)
+
+        const sql = 'SELECT * FROM jeopardy_clues OFFSET $1 LIMIT 1'
+        const result = await pool.query(sql, [randomindex])
+        console.log(result.rows[0])
+        return result.rows[0]
+    } catch (error) {
+        console.log("Error in getRandomClue", error.message)
+        throw error
+    }
 }
 
-mongoose.set('strictQuery', false)
-mongoose.connect(url)
-
-const clueSchema = new mongoose.Schema({
-    clue_game_id: String,
-    game_year: String,
-    clue_value: String,
-    clue_category: String,
-    clue_round: String,
-    clue_question: String,
-    clue_answer: String
-})
-
-const Clue = mongoose.model('Clue', clueSchema)
-
-app.put("/jepClues", async (request, response) => {
+app.post("/jepClues", async (request, response) => {
     try {
-        await addCluesToMongoDB([...request.body])
+        await addCluesToPostgres([...request.body])
         response.send("Success")
     } catch (error) {
         response.status(400).send(error.message)
@@ -107,13 +107,17 @@ app.get("/", (request, response) => {
         response.send(data)
     })
 })
-app.get("/random", (request, response) => {
-    getRandomClue()
-        .then(result => {
-            response.json(result)
-        })
+app.get("/random", async (request, response) => {
+    try {
+        const result = await getRandomClue()
+        response.json(result)
+    } catch (error) {
+        console.log("Error in /random", error.message)
+        response.status(500).send("Error fetching random clue")
+    }
 })
 
+// not too worried about this right now, edit later. 
 app.get("/randomGame/:gameId", async (request, response) => {
     let game_id = request.params['gameId']
     const categories = await Clue.aggregate([
@@ -126,13 +130,18 @@ app.get("/randomGame/:gameId", async (request, response) => {
     response.json(categories)
 })
 
-process.on('SIGINT', () => {
-    console.log("goodbye!")
-    mongoose.connection.close()
-    server.close(() => {
-        console.log("we're done")
-        process.exit(0)
-    })
+process.on('SIGINT', async () => {
+    console.log("Shutting down...")
+
+    try {
+        await pool.end()
+        console.log("Postgres connection closed")
+    } catch (error) {
+        console.log("Error closing Postgres connection")
+    }
+
+    console.log("Express server closed")
+    process.exit(0)
 })
 
 const PORT = process.env.port || 8080

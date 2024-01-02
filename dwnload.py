@@ -123,6 +123,7 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
 
         categories_arr = get_category_names(bsoup)
         category_index = 0
+        clue_order = 0
         regular_categories = categories_arr[0]
         FJ_category = categories_arr[1]
         current_categories = regular_categories[0:6]
@@ -156,11 +157,14 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
                     DD_correct_response = DD_correct_response_em.get_text()
 
                 #Also have to custom make this an object
+                current_clue_information['clue_order'] = clue_order
+                current_clue_information['category_order'] = category_index
                 current_clue_information['clue_category'] = current_categories[category_index]
                 current_clue_information['clue_question'] = daily_double_question.get_text()
                 current_clue_information['clue_answer'] = DD_correct_response
                 current_clue_information['clue_value'] = 'DD'
                 current_clue_information['clue_round'] = 'single_jeopardy' if not isDoubleJeopardy else 'double_jeopardy'
+                clue_order += 1
                 category_index = update_category_index(category_index)
                 all_clues.append(current_clue_information)
                 continue
@@ -208,10 +212,13 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
                 clue_question = clue_QA[0] #question
                 clue_answer = clue_QA[1] #answer
 
+                current_clue_information['category_order'] = category_index
                 current_clue_information['clue_question'] = clue_question
                 current_clue_information['clue_answer'] = clue_answer
+                current_clue_information['clue_order'] = clue_order
                 
                 all_clues.append(current_clue_information)
+                clue_order += 1
 
                 category_index = update_category_index(category_index)
 
@@ -229,5 +236,5 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
     
     print("game finished, delaying for next one")
 
-    # For a lot of games, delay by 30 seconds
+    # For a lot of games, delay by 12 seconds
     time.sleep(12)
