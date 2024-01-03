@@ -28,17 +28,21 @@ def get_final_jeopardy_clue(fj_block, final_jep_block_with_answer):
 def get_jeopardy_question_and_answer(clue_div, clue_snippet):
 
 
-    #question_onmouseover = clue_div['onmouseover'] #answer is in the onmouseover attribute
-    
-    #question_souper = BeautifulSoup(question_onmouseover, 'html.parser') #Need to search again with bsoup, parse this onmouseover attribute
-    #correct_response = question_souper.find('em', {'class': 'correct_response'}) #find the "em" in here with a correct response
     rj_correct_response_em = clue_snippet.find('em', {'class': 'correct_response'})
     rj_correct_response = None
     if rj_correct_response_em:
         rj_correct_response = rj_correct_response_em.get_text()
     
     answer_in_td = BeautifulSoup(clue_snippet.find("td", class_="clue_text").get_text()) #gets the answer (question in general trivia term) of the clue in the <td>
-            
+    
+    if not rj_correct_response:
+        question_onmouseover = clue_div['onmouseover']
+        question_souper = BeautifulSoup(question_onmouseover, 'html.parser')
+        correct_response = question_souper.find('em', {'class': 'correct_response'})
+        answer_in_td = BeautifulSoup(clue_snippet.find("td", class_="clue_text").get_text())
+
+        return [answer_in_td.get_text(), correct_response.get_text()]
+
     return [answer_in_td.get_text(), rj_correct_response] #return clue question, clue answer
 
 def get_category_names(full_html):
@@ -190,7 +194,7 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
             try:
 
                 #Getting the question (answer in trivia terms)
-
+                
                 clue_value = clue_snippet.find("td", class_="clue_value").get_text()
                 current_clue_information['clue_value'] = clue_value
                 
@@ -237,4 +241,4 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
     print("game finished, delaying for next one")
 
     # For a lot of games, delay by 12 seconds
-    time.sleep(12)
+    time.sleep(3)

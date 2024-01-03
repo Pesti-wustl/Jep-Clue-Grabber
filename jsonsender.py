@@ -10,7 +10,7 @@ curr_game_id = int(automated_game_id)
 with open(f'./json_clues/game_{curr_game_id}.json', 'r') as f:
     data = json.load(f)
 
-response = requests.put('http://localhost:8080/jepClues', json=data)
+response = requests.post('http://localhost:8080/jepClues', json=data)
 if (response.status_code == 400):
     print("oh no")
     with open(f'./game_statuses.txt', 'a') as f:

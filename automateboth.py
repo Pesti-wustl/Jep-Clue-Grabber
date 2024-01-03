@@ -2,7 +2,7 @@ import subprocess
 import sys
 
 
-for i in range(7000, 70001):
+for i in range(1, 2):
     print("Running HTML and JSON download script")
     subprocess.run([sys.executable, "dwnload.py", str(i)], check=True)
     print("HTML and JSON dwnload done")

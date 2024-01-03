@@ -17,7 +17,7 @@ const pool = new Pool({
 })
 
 const checkCategoryAndGetId = async (categoryName, gameId, gameYear) => {
-    const sql = 'SELECT id FROM categories WHERE category_name = $1 AND game_id = $2 AND game_year = $3'
+    const sql = 'SELECT id FROM categories WHERE cat_category_name = $1 AND game_id = $2 AND game_year = $3'
     const values = [categoryName, gameId, gameYear]
     const result = await pool.query(sql, values)
     return result.rows.length > 0 ? result.rows[0].id : null
@@ -43,8 +43,11 @@ const addCluesToPostgres = async (clues) => {
                 return null;
             }
 
+            console.log("clue: ", clue)
             let categoryId = await checkCategoryAndGetId(clue.clue_category, clue.clue_game_id, clue.game_year);
+            console.log("Category ID", categoryId)
             if (categoryId === null) {
+                console.log("category is null!")
                 categoryId = await insertCategoryAndGetId(clue.clue_category, clue.clue_game_id, clue.game_year, clue.category_order);
             }
 
