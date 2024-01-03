@@ -24,7 +24,7 @@ const checkCategoryAndGetId = async (categoryName, gameId, gameYear) => {
 }
 
 const insertCategoryAndGetId = async (categoryName, gameId, gameYear, categoryOrder) => {
-    const insertSql = 'INSERT INTO categories (category_name, game_id, game_year, category_order) VALUES ($1, $2, $3, $4) RETURNING id'
+    const insertSql = 'INSERT INTO categories (cat_category_name, game_id, game_year, category_order) VALUES ($1, $2, $3, $4) RETURNING id'
     const insertValues = [categoryName, gameId, gameYear, categoryOrder]
     const insertResult = await pool.query(insertSql, insertValues)
     return insertResult.rows[0].id
