@@ -184,6 +184,7 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
                 final_jeopardy_answer = final_jeopardy[1] #answer
 
                 #Make this an object
+                current_clue_information['clue_order'] = clue_order
                 current_clue_information['category_order'] = 6
                 current_clue_information['clue_category'] = FJ_category
                 current_clue_information['clue_question'] = final_jeopardy_clue
