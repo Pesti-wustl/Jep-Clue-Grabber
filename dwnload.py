@@ -246,4 +246,4 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
     print("game finished, delaying for next one")
 
     # For a lot of games, delay by 12 seconds
-    time.sleep(3)
+    time.sleep(5)
