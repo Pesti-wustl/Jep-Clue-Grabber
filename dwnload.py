@@ -51,12 +51,13 @@ def get_category_names(full_html):
     #Get the Categories
     categories_html = full_html.find_all(class_='category_name')
     #keep the final seperate
-    final_jeopardy_category = categories_html.pop().text
+    final_jeopardy_category = "BLANK"
+    if regular_game:
+        final_jeopardy_category = categories_html.pop().text
     categories = [] #Convert the HTML to just the text of the categories
     for category in categories_html:
         categories.append(category.text)
-
-    return (categories, final_jeopardy_category) #return categories, FJ category
+    return (categories) if not final_jeopardy_category else (categories, final_jeopardy_category) #return categories, FJ category
 
 def check_if_double_jeopardy(clue_div):
     td_tag = clue_div.find('td', {'class': 'clue_unstuck'})
@@ -83,6 +84,8 @@ def update_category_index(curr_index):
 
 for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1): #For every single game, we gotta check if cached, GET if not... Etc...
     all_clues = [] #Reset the all clues
+    regular_game = True # Assume regular game with two jep rounds and a final
+    DJ_and_FJ_only = False
 
     # URL of the web page you want to download
     url = f"https://www.j-archive.com/showgame.php?game_id={curr_game_id}"
@@ -125,8 +128,14 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
 
         #Get the year, only have to do once
         game_year_title = bsoup.find("title").get_text()
-        game_year = game_year_title[-10:-6]        
+        game_year = game_year_title[-10:-6]
 
+        game_comments = bsoup.find(id="game_comments").get_text()
+        if "Jeopardy! Round only." in game_comments:
+            regular_game = False
+        if "continuation" in game_comments:
+            DJ_and_FJ_only = True
+            
         categories_arr = get_category_names(bsoup)
         category_index = 0
         clue_order = 0
@@ -134,7 +143,6 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
         FJ_category = categories_arr[1]
         current_categories = regular_categories[0:6]
         isDoubleJeopardy = False
-
 
         for clue_snippet in bsoup.find_all("td", class_='clue'): #looks at each <td> with class=clue one at a time
             
@@ -208,8 +216,9 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
                 if not isDoubleJeopardy:
                     isDoubleJeopardy = check_if_double_jeopardy(question_div) #now true if is DJ
                     if isDoubleJeopardy:
-                        current_categories = regular_categories[6:] #Change the categories to the DJ categories
-                        category_index = 0
+                        if not DJ_and_FJ_only:
+                            current_categories = regular_categories[6:] #Change the categories to the DJ categories
+                            category_index = 0
                 
                 clue_category = current_categories[category_index]
                 current_clue_information['clue_category'] = clue_category
@@ -246,4 +255,4 @@ for curr_game_id in range(automated_game_id_start, automated_game_id_start + 1):
     print("game finished, delaying for next one")
 
     # For a lot of games, delay by 12 seconds
-    time.sleep(5)
+    time.sleep(1)
